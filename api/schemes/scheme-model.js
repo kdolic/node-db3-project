@@ -90,12 +90,29 @@ return db('schemes as sc')
       "steps": []
     }
 */
-function findById(scheme_id) { // EXERCISE B
-  return db('schemes as sc')
-    // .select('sc.scheme_name', 'st.*')
-    .leftJoin('steps as st', 'sc.scheme_id', 'st.scheme_id')
-    .where('sc.scheme_id', scheme_id).first()
-    .orderBy('st.step_number', 'asc')
+async function findById(scheme_id) { // EXERCISE B
+  const scheme = await
+  db('schemes as sc')
+  .select('sc.')
+  .where('sc.scheme_id', scheme_id)
+  .count('st.step_id as number_of_steps')
+  .leftJoin('steps as st', 'sc.scheme_id', 'st.scheme_id')
+  .groupBy('sc.scheme_id')
+  .orderBy('sc.scheme_id', 'ASC')
+  .first()
+ if(scheme){
+   const steps = await db('schemes as sc')
+     .select('sc.scheme_name', 'st.')
+     .leftJoin('steps as st', 'sc.scheme_id', 'st.scheme_id')
+     .where('sc.scheme_id', scheme_id)
+     .orderBy('st.step_number', "ASC");
+ if(steps[0].step_id === null || !steps) {
+   scheme.steps = [];
+ } else {
+   scheme.steps = steps;
+ }
+ }
+    return scheme;
 }
 
 /*
@@ -132,6 +149,9 @@ function findSteps(scheme_id) { // EXERCISE C
 function add(scheme) { // EXERCISE D
   return db('schemes as sc')
   .insert(scheme)
+  .then(([scheme_id]) => {
+    return db('schemes').where('scheme_id', scheme_id).first()
+  })
 }
 
 /*
